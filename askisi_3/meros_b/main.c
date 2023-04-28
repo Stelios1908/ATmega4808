@@ -5,7 +5,7 @@
 #define FREQ_BASE 300
 #define DUTY_BASE FREQ_BASE*0.40
 
-#define FREQ_LEPIDES 100
+#define FREQ_LEPIDES 150
 #define DUTY_LEPIDES FREQ_LEPIDES/2
 int fun_on_off=0;
 //-------------------sinarthseis----------------------------------
@@ -39,19 +39,19 @@ void init_timer_lepides(void){
 	TCB0.INTCTRL|=TCB_CAPT_bm;
 }
 void init_ADC(void){
-	// IFREE RUNNING MODE
-	ADC0.CTRLA |= ADC_FREERUN_bm;
 	//DEXOMASTE ANALOGIKH EISIDO APO PIN7
 	ADC0.MUXPOS |= ADC_MUXPOS_AIN7_gc;
 	ADC0.DBGCTRL |= ADC_DBGRUN_bm;
-	//ORIO KATOFLI
-	ADC0.WINLT |= 10;
 	//OTAN XEPRASO TO KATOFLI NA KANO INTERRUPT
 	ADC0.INTCTRL |= ADC_WCMP_bm;
+	// IFREE RUNNING MODE
+	ADC0.CTRLA |= ADC_FREERUN_bm;
+	//ORIO KATOFLI
+	ADC0.WINLT |= 10;
 	//OTAN RES < KATOFLI
 	ADC0.CTRLE |= ADC_WINCM0_bm;
-	
-    ADC0.COMMAND |= ADC_STCONV_bm;
+	//ADC0.CTRLA |= ADC_ENABLE_bm;
+	//ADC0.COMMAND |= ADC_STCONV_bm;
 	
 	}
 
@@ -101,18 +101,24 @@ ISR(PORTF_PORT_vect){
 	if(!fun_on_off){
 		//prota afoy anavoyme energopoioyme ton ADC 
 		ADC0.CTRLA |= ADC_ENABLE_bm;
+		ADC0.COMMAND |= ADC_STCONV_bm;
 		//meta energopioyme ta PWM
-		TCA0.SINGLE.CNT=0;
+		TCA0.SINGLE.CNT=FREQ_BASE;
 		TCA0.SINGLE.CTRLA |=TCA_SINGLE_ENABLE_bm;
-		TCB0_CNT=100;
+		TCB0_CNT=FREQ_LEPIDES-50;
 		TCB0.CTRLA |=TCB_ENABLE_bm;
 		fun_on_off=1;
+		//svino pithano anameno to led ADC
+		PORTD.OUT |=PIN2_bm; 
+		
 	}
 	else{
 		TCA0.SINGLE.CTRLA &=0x0;
 		TCB0.CTRLA &=0x0;
 		//sbino ta led
 		PORTD.OUTCLR |=0x03;
+		//disable ADC
+		ADC0.CTRLA &=0x02;
 		fun_on_off=0;
 	}
 }
@@ -138,8 +144,19 @@ ISR(TCB0_INT_vect)//lepides otan exoyme ena pliri kyklo
 	//led on off
 	PORTD.OUTTGL =PIN0_bm;
 }
-ISR(ADC0_WCOMP_vect) {	//interrupt ??? ??? ADC
+ISR(ADC0_WCOMP_vect) {	//interrupt για τον ADC
+		//katharizo  tis simaies gia tous metrites giati
+		//thelo na apofoigo na kanei interrupt meta apo edo
+		int intflags_1 = TCA0.SINGLE.INTFLAGS;
+	    TCA0.SINGLE.INTFLAGS = intflags_1;
+		int intflags_2 = TCB0.INTFLAGS;
+		TCB0.INTFLAGS = intflags_2;
 		
+		//apenergopoio PWM
+		TCA0.SINGLE.CTRLA &=0x0;
+		TCB0.CTRLA &=0x0;
+		//disable ADC
+		ADC0.CTRLA &=0x02;
 		int intflags = ADC0.INTFLAGS;
 	    ADC0.INTFLAGS = intflags;
 		//led ADC ON
@@ -148,10 +165,7 @@ ISR(ADC0_WCOMP_vect) {	//interrupt ??? ??? ADC
     	PORTD.OUT |= PIN0_bm|PIN1_bm;
 	    //gia na xero oti eimai off
 	    fun_on_off=0;
-		//apenergopoio PWM
-		TCA0.SINGLE.CTRLA &=0x0;
-		TCB0.CTRLA &=0x0;
-		//disable ADC
-		ADC0.CTRLA &=0x02;
+		
+		
 		 
 	 }
