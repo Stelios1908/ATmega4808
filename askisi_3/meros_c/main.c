@@ -12,14 +12,13 @@ int fun_on_off=0;
 //-------------------sinarthseis----------------------------------
 void init_timer_base(void){
 	TCA0.SINGLE.CTRLA=TCA_SINGLE_CLKSEL_DIV1_gc;//xoris prescaler
-	TCA0.SINGLE.PER=FREQ_BASE;
-	TCA0.SINGLE.CMP0=DUTY_BASE;
+	TCA0.SINGLE.PER= FREQ_BASE;
+	TCA0.SINGLE.CMP0 = DUTY_BASE;
 	//RITHMISI MODE
 	TCA0.SINGLE.CTRLB=TCA_SINGLE_CMP0EN_bm|TCA_SINGLE_WGMODE_SINGLESLOPE_gc;
 	//ENABLE INTERRUPR
 	TCA0.SINGLE.INTCTRL=TCA_SINGLE_OVF_bm;
-	TCA0.SINGLE.INTCTRL|=TCA_SINGLE_CMP0_bm;
-	TCA0.SINGLE.CNT=10;
+	//TCA0.SINGLE.INTCTRL|=TCA_SINGLE_CMP0_bm;
 	//H EXODOS PWM THA BGENEI STO PORTC
 	PORTMUX.TCAROUTEA |=PORTMUX_TCA0_PORTC_gc;
 	//Disable kai ta dio PWM
@@ -32,9 +31,8 @@ void init_timer_lepides(void){
 	TCB0.CTRLA = (TCB0.CTRLA & ~TCB_CLKSEL_gm) | TCB_CLKSEL_CLKDIV1_gc;
 	TCB0.CTRLB |= TCB_CCMPEN_bm;
 	TCB0.CTRLB |= TCB_CNTMODE_PWM8_gc;
-	TCB0_CCMPL=	FREQ_LEPIDES;
-	TCB0_CCMPH= DUTY_LEPIDES;
-	TCB0.CNT=50;
+	
+	//TCB0.CNT=50;
 	//H EXODOS NA BGENEI STO PORTA
 	PORTMUX.TCBROUTEA |=0x0;
 	TCB0.INTCTRL|=TCB_CAPT_bm;
@@ -64,6 +62,8 @@ int main(void)
 	CLKCTRL.MCLKCTRLA=CLKCTRL_CLKSEL_OSCULP32K_gc;
 	//pali theloyme prosvasi
 	CPU_CCP = CCP_IOREG_gc;
+	//autpo xreiazete mono gia test,an to ektelesoyme
+	//se ATmega den theloyme prescaler
 	CLKCTRL.MCLKCTRLB = CLKCTRL_PDIV_64X_gc | CLKCTRL_PEN_bm;
 	
 	//ELENXOS AN TO ROLOI EINAI STATHERO
@@ -105,10 +105,16 @@ ISR(PORTF_PORT_vect){
 		//prota afoy anavoyme energopoioyme ton ADC
 		ADC0.CTRLA |= ADC_ENABLE_bm;
 		ADC0.COMMAND |= ADC_STCONV_bm;
+		
+
 		//meta energopioyme ta PWM
-		TCA0.SINGLE.CNT=FREQ_BASE;
-		//TCA0.SINGLE.CTRLA |=TCA_SINGLE_ENABLE_bm;
-		TCB0_CNT=FREQ_LEPIDES-50;
+		TCA0.SINGLE.CNT=10;
+		TCA0.SINGLE.CTRLA |=TCA_SINGLE_ENABLE_bm;
+		//arxikopoio sixnothtes kai duty cycle giati 
+		//den einai panta idia gia TCB0
+		TCB0_CCMPL=	FREQ_LEPIDES;
+		TCB0_CCMPH= DUTY_LEPIDES;
+		TCB0_CNT=50;
 		TCB0.CTRLA |=TCB_ENABLE_bm;
 		fun_on_off=1;
 		//svino pithano anameno to led ADC
