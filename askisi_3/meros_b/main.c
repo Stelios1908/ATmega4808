@@ -2,10 +2,10 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-#define FREQ_BASE 300
+#define FREQ_BASE 255
 #define DUTY_BASE FREQ_BASE*0.40
 
-#define FREQ_LEPIDES 150
+#define FREQ_LEPIDES 127
 #define DUTY_LEPIDES FREQ_LEPIDES/2
 int fun_on_off=0;
 //-------------------sinarthseis----------------------------------
@@ -17,7 +17,7 @@ void init_timer_base(void){
 	TCA0.SINGLE.CTRLB=TCA_SINGLE_CMP0EN_bm|TCA_SINGLE_WGMODE_SINGLESLOPE_gc;
 	//ENABLE INTERRUPR
 	TCA0.SINGLE.INTCTRL=TCA_SINGLE_OVF_bm;
-	TCA0.SINGLE.INTCTRL|=TCA_SINGLE_CMP0_bm;
+	//TCA0.SINGLE.INTCTRL|=TCA_SINGLE_CMP0_bm;
 	TCA0.SINGLE.CNT=0;
 	//H EXODOS PWM THA BGENEI STO PORTC
 	PORTMUX.TCAROUTEA |=PORTMUX_TCA0_PORTC_gc;
@@ -33,7 +33,7 @@ void init_timer_lepides(void){
 	TCB0.CTRLB |= TCB_CNTMODE_PWM8_gc;
 	TCB0_CCMPL=	FREQ_LEPIDES;
 	TCB0_CCMPH= DUTY_LEPIDES;
-	TCB0.CNT=15;
+	TCB0.CNT=50;
 	//H EXODOS NA BGENEI STO PORTA
 	PORTMUX.TCBROUTEA |=0x0;
 	TCB0.INTCTRL|=TCB_CAPT_bm;
@@ -50,21 +50,23 @@ void init_ADC(void){
 	ADC0.WINLT |= 10;
 	//OTAN RES < KATOFLI
 	ADC0.CTRLE |= ADC_WINCM0_bm;
-	//ADC0.CTRLA |= ADC_ENABLE_bm;
-	//ADC0.COMMAND |= ADC_STCONV_bm;
 	
 	}
 
 int main(void)
 {
-	//epitrepsi prosvasis se eidikoys kataxorites
-	CPU_CCP = CCP_IOREG_gc;
-	//syxnothtia sta 32 KHh
-	CLKCTRL.MCLKCTRLA=CLKCTRL_CLKSEL_OSCULP32K_gc;
-	//CLKCTRL.MCLKCTRLB = CLKCTRL_PDIV_64X_gc | CLKCTRL_PEN_bm;
+      //epitrepsi prosvasis se eidikoys kataxorites
+      CPU_CCP = CCP_IOREG_gc;
+      //syxnothtia sta 32 KHh
+      CLKCTRL.MCLKCTRLA=CLKCTRL_CLKSEL_OSCULP32K_gc;
+      //pali theloyme prosvasi
+       CPU_CCP = CCP_IOREG_gc;
+      //autpo xreiazete mono gia test,an to ektelesoyme
+      //se ATmega den theloyme prescaler
+      CLKCTRL.MCLKCTRLB = CLKCTRL_PDIV_64X_gc | CLKCTRL_PEN_bm;
 	
 	//ELENXOS AN TO ROLOI EINAI STATHERO
-	while (CLKCTRL.MCLKSTATUS & CLKCTRL_SOSC_bm)
+	while (!(CLKCTRL.MCLKSTATUS & 0x20))
 	{
 		;
 	}
@@ -103,9 +105,9 @@ ISR(PORTF_PORT_vect){
 		ADC0.CTRLA |= ADC_ENABLE_bm;
 		ADC0.COMMAND |= ADC_STCONV_bm;
 		//meta energopioyme ta PWM
-		TCA0.SINGLE.CNT=FREQ_BASE;
+		TCA0.SINGLE.CNT=10;
 		TCA0.SINGLE.CTRLA |=TCA_SINGLE_ENABLE_bm;
-		TCB0_CNT=FREQ_LEPIDES-50;
+		TCB0_CNT=50;
 		TCB0.CTRLA |=TCB_ENABLE_bm;
 		fun_on_off=1;
 		//svino pithano anameno to led ADC
@@ -116,7 +118,7 @@ ISR(PORTF_PORT_vect){
 		TCA0.SINGLE.CTRLA &=0x0;
 		TCB0.CTRLA &=0x0;
 		//sbino ta led
-		PORTD.OUTCLR |=0x03;
+		PORTD.OUT |=0x03;
 		//disable ADC
 		ADC0.CTRLA &=0x02;
 		fun_on_off=0;
@@ -144,7 +146,7 @@ ISR(TCB0_INT_vect)//lepides otan exoyme ena pliri kyklo
 	//led on off
 	PORTD.OUTTGL =PIN0_bm;
 }
-ISR(ADC0_WCOMP_vect) {	//interrupt για τον ADC
+ISR(ADC0_WCOMP_vect) {	//interrupt ??? ??? ADC
 		//katharizo  tis simaies gia tous metrites giati
 		//thelo na apofoigo na kanei interrupt meta apo edo
 		int intflags_1 = TCA0.SINGLE.INTFLAGS;
