@@ -2,10 +2,10 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-#define FREQ_BASE 300
+#define FREQ_BASE 255
 #define DUTY_BASE FREQ_BASE*0.40
 
-#define FREQ_LEPIDES 255
+#define FREQ_LEPIDES 127
 #define DUTY_LEPIDES FREQ_LEPIDES/2
 int fun_on_off=0;
 //-------------------sinarthseis----------------------------------
@@ -43,7 +43,9 @@ int main(void)
 	CPU_CCP = CCP_IOREG_gc;
 	//syxnothtia sta 32 KHh
 	CLKCTRL.MCLKCTRLA=CLKCTRL_CLKSEL_OSCULP32K_gc;
-	//CLKCTRL.MCLKCTRLB = CLKCTRL_PDIV_64X_gc | CLKCTRL_PEN_bm;
+	
+	CPU_CCP = CCP_IOREG_gc;
+	CLKCTRL.MCLKCTRLB = CLKCTRL_PDIV_64X_gc | CLKCTRL_PEN_bm;
 	
 	//ELENXOS AN TO ROLOI EINAI STATHERO
 	while (CLKCTRL.MCLKSTATUS & CLKCTRL_SOSC_bm)
