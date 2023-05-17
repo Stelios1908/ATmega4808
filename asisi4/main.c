@@ -4,9 +4,9 @@
 #define PERIOD 255
 #define DUTY_CYCLE	PERIOD/2
 
-#define ENTRY_TIME 10000
+#define ENTRY_TIME 1000
 #define EXIT_TIME 400
-
+#define THRESS 30
 volatile int ARMED=0;
 int digit_code=1;
 int tries = 3;
@@ -57,7 +57,7 @@ void ADC_init(void){
 	//synexeia epopteyei
 	ADC0.CTRLA |= ADC_FREERUN_bm;
 	//katofli
-	ADC0.WINLT |= 30; 
+	ADC0.WINLT |= THRESS; 
 	
 	//otan res<thress
 	ADC0.CTRLE |= ADC_WINCM0_bm;
@@ -146,8 +146,26 @@ ISR(TCA0_CMP0_vect) {
 	    ARMED=1; //oplizo to systhma	
 }
 ISR(PORTF_PORT_vect) {
+	
 	int intflags = PORTF.INTFLAGS;
 	PORTF.INTFLAGS = intflags;
+	
+	if(!(intflags ^ 0b01100000))
+	{
+		if(ARMED | suc_code) {
+			//meiononte oi prospathies mono an eimaste armed
+			tries--;
+			if(tries==0){
+				alarm=1;
+				falsecode=1;
+				timer=0;
+				ARMED=1;
+	    		}
+	      }
+		  digit_code = 1;
+		  return;
+	}
+	
 	if (intflags & PIN5_bm) {//otan patithei to pin 5
 		if (digit_code == 1 || digit_code == 3)
 		{
@@ -188,7 +206,8 @@ ISR(PORTF_PORT_vect) {
 			timer=0;
 			alarm=0;
 			}
-			else{
+			else{ 
+				  //edo tha mpoyme an to systima einai oplismeno
 				  if(ARMED | suc_code){
 					   tries--;
 					   if(tries==0){
